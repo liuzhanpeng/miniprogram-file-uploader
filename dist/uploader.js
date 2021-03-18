@@ -34,7 +34,7 @@ var logger = createCommonjsModule(function (module) {
 	var Logger = { };
 
 	// For those that are at home that are keeping score.
-	Logger.VERSION = "1.6.0";
+	Logger.VERSION = "1.6.1";
 
 	// Function which handles all incoming log messages.
 	var logHandler;
@@ -281,8 +281,11 @@ var logger = createCommonjsModule(function (module) {
 		Logger.setHandler(Logger.createDefaultHandler(options));
 	};
 
+	// Createa an alias to useDefaults to avoid reaking a react-hooks rule.
+	Logger.setDefaults = Logger.useDefaults;
+
 	// Export to popular environments boilerplate.
-	if ( module.exports) {
+	if (module.exports) {
 		module.exports = Logger;
 	}
 	else {
@@ -1175,7 +1178,7 @@ class Uploader {
       if (this.config.testChunks) {
         this.identifier = await this.computeMD5();
       } else {
-        this.identifier = this.generateIdentifier();
+        this.identifier = await this.generateIdentifier();
       }
       logger.timeEnd('[Uploader] generateIdentifier');
       logger.debug('generateIdentifier ', this.identifier);
@@ -1551,11 +1554,11 @@ class Uploader {
     this.emitter.off(event, listenr);
   }
 
-  generateIdentifier() {
+  async generateIdentifier() {
     let identifier = '';
     const generator = this.config.generateIdentifier;
     if (isFunction(generator)) {
-      identifier = generator();
+      identifier = await generator();
     } else {
       const uuid = `${appId}-${Date.now()}-${Math.random()}`;
       identifier = sparkMd5.hash(uuid);
@@ -1609,13 +1612,17 @@ class Uploader {
   async verifyRequest() {
     const {
       verifyUrl,
-      fileName
+      fileName,
+      header
     } = this.config;
     const verifyResp = await this._requestAsync({
       url: verifyUrl,
       data: {
         fileName,
         identifier: this.identifier
+      },
+      header: {
+        ...header
       }
     });
     return verifyResp
@@ -1624,13 +1631,17 @@ class Uploader {
   async mergeRequest() {
     const {
       mergeUrl,
-      fileName
+      fileName,
+      header
     } = this.config;
     const mergeResp = await this._requestAsync({
       url: mergeUrl,
       data: {
         fileName,
         identifier: this.identifier
+      },
+      header: {
+        ...header
       }
     });
     return mergeResp
