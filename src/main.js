@@ -51,7 +51,7 @@ class Uploader {
       if (this.config.testChunks) {
         this.identifier = await this.computeMD5()
       } else {
-        this.identifier = this.generateIdentifier()
+        this.identifier = await this.generateIdentifier()
       }
       Logger.timeEnd('[Uploader] generateIdentifier')
       Logger.debug('generateIdentifier ', this.identifier)
@@ -427,11 +427,11 @@ class Uploader {
     this.emitter.off(event, listenr)
   }
 
-  generateIdentifier() {
+  async generateIdentifier() {
     let identifier = ''
     const generator = this.config.generateIdentifier
     if (Type.isFunction(generator)) {
-      identifier = generator()
+      identifier = await generator()
     } else {
       const uuid = `${appId}-${Date.now()}-${Math.random()}`
       identifier = SparkMD5.hash(uuid)
@@ -485,13 +485,17 @@ class Uploader {
   async verifyRequest() {
     const {
       verifyUrl,
-      fileName
+      fileName,
+      header
     } = this.config
     const verifyResp = await this._requestAsync({
       url: verifyUrl,
       data: {
         fileName,
         identifier: this.identifier
+      },
+      header: {
+        ...header
       }
     })
     return verifyResp
@@ -500,13 +504,17 @@ class Uploader {
   async mergeRequest() {
     const {
       mergeUrl,
-      fileName
+      fileName,
+      header
     } = this.config
     const mergeResp = await this._requestAsync({
       url: mergeUrl,
       data: {
         fileName,
         identifier: this.identifier
+      },
+      header: {
+        ...header
       }
     })
     return mergeResp
